@@ -1,28 +1,22 @@
 # CMG Player
 
-Player utilities and progression operating consistently across the ATLAS cluster.
+Player utilities and progression operations for the ATLAS cluster, including recovery of lost player inventories, tames, and ships.
 
-This Chaotic Minds Gaming-specific module extends [Chaotic Minds Gaming Core](https://github.com/Chaotic-Minds-Collective/cmg-atlas-core-plugin) and the [ATLAS integration adapter](https://github.com/Chaotic-Minds-Collective/cmg-atlas-plugin); it does not replace either foundation.
+This plugin extends [Chaotic Minds Gaming Core](https://github.com/Chaotic-Minds-Collective/cmg-atlas-core-plugin) and the [ATLAS integration adapter](https://github.com/Chaotic-Minds-Collective/cmg-atlas-plugin). It does not replace either foundation.
 
-## Feature scope
-- Suicide/self-respawn and stuck recovery
-- Teleport/travel with permissions, costs, cooldowns and PvP/ship rules
-- Command aliases and help
-- Tame tracker, ownership, limits and custom spawns
-- Skill-tree extensions where hooks permit
-- Quest progression and tame-color tokens
-- Ship retrieval after sinking with anti-duplication controls
+## Recovery
 
-## Architecture and dependencies
-- Core player identity, scoped permissions and event ingestion
-- ATLAS adapter: player/location/inventory/tame/ship/skill callbacks
-- Tribes for ownership; Commerce for tokens
-- World for safe zones/limits; Adventures for quests
+The initial recovery foundation validates pre-loss snapshots against normalized loss events, asset ownership, and cluster/grid/server scope. It requires explicit approval and a provider operation receipt before a claim can be marked restored.
 
-Core remains authoritative for shared identity, authorization and platform records. ATLAS-native calls pass through the shared adapter. This module owns its domain state and must not connect directly to PostgreSQL.
-
-## Implementation plan
-See [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for data ownership, milestones and technical gates.
+See [docs/RECOVERY.md](docs/RECOVERY.md) for the evidence contract, workflow, and live-server verification gates.
 
 ## Readiness
-Planning scaffold only. Native ATLAS compatibility and feature-specific callbacks are not yet verified on an isolated server. No production deployment is implied.
+
+Recovery policy tests run with Node.js 22 or later:
+
+```sh
+npm test
+npm run check
+```
+
+Native ATLAS compatibility, snapshot callbacks, and provider restore operations remain unverified. No production deployment or live-server action is implied.
