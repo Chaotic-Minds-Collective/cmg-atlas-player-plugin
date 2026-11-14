@@ -36,22 +36,45 @@ function normalizeScope(scope) {
   return Object.freeze(normalized);
 }
 
-function cloneJsonValue(value, path = "state", depth = 0, counter = { nodes: 0 }) {
+function chargeBytes(counter, bytes) {
+  counter.bytes += bytes;
+  if (counter.bytes > counter.maxBytes) throw new RangeError("snapshot state exceeds maxStateBytes");
+}
+
+function chargeString(counter, value) {
+  // Each UTF-16 code unit requires at least one byte in JSON. Check before allocating.
+  if (value.length > counter.maxBytes - counter.bytes) {
+    throw new RangeError("snapshot state exceeds maxStateBytes");
+  }
+  chargeBytes(counter, new TextEncoder().encode(JSON.stringify(value)).byteLength);
+}
+
+function cloneJsonValue(value, path, depth, counter) {
   counter.nodes += 1;
   if (counter.nodes > MAX_STATE_NODES) throw new TypeError("snapshot state exceeds maximum node count");
   if (depth > MAX_STATE_DEPTH) throw new TypeError("snapshot state exceeds maximum nesting depth");
 
-  if (value === null || typeof value === "string" || typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    chargeString(counter, value);
+    return value;
+  }
+  if (value === null || typeof value === "boolean") {
+    chargeBytes(counter, value === null ? 4 : value ? 4 : 5);
+    return value;
+  }
   if (typeof value === "number") {
     if (!Number.isFinite(value)) throw new TypeError(`${path} contains a non-finite number`);
+    chargeBytes(counter, JSON.stringify(value).length);
     return value;
   }
   if (typeof value !== "object") throw new TypeError(`${path} contains a non-JSON value`);
 
   if (Array.isArray(value)) {
+    chargeBytes(counter, 2);
     const result = [];
     for (let index = 0; index < value.length; index += 1) {
       if (!Object.hasOwn(value, index)) throw new TypeError(`${path} contains a sparse array`);
+      if (index > 0) chargeBytes(counter, 1);
       result.push(cloneJsonValue(value[index], `${path}[${index}]`, depth + 1, counter));
     }
     return Object.freeze(result);
@@ -61,8 +84,14 @@ function cloneJsonValue(value, path = "state", depth = 0, counter = { nodes: 0 }
   if (prototype !== Object.prototype && prototype !== null) {
     throw new TypeError(`${path} must contain only plain JSON objects`);
   }
+  chargeBytes(counter, 2);
   const result = {};
-  for (const [key, child] of Object.entries(value)) {
+  let first = true;
+  for (const key of Object.keys(value)) {
+    chargeBytes(counter, first ? 1 : 2);
+    first = false;
+    chargeString(counter, key);
+    const child = value[key];
     Object.defineProperty(result, key, {
       value: cloneJsonValue(child, `${path}.${key}`, depth + 1, counter),
       enumerable: true,
@@ -123,7 +152,7 @@ export function createSnapshotCapture({
     if (inFlight.has(key)) return inFlight.get(key);
 
     const operation = (async () => {
-      const capturedAt = requireIsoDateTime(clock(), "capturedAt");
+      const startedAt = requireIsoDateTime(clock(), "capturedAt");
       const sourceResult = await source.capture(Object.freeze({
         kind,
         assetId,
@@ -140,7 +169,7 @@ export function createSnapshotCapture({
         throw new Error("source returned a different cluster/grid/server scope");
       }
 
-      const state = cloneJsonValue(sourceResult.state);
+      const state = cloneJsonValue(sourceResult.state, "state", 0, { nodes: 0, bytes: 0, maxBytes: maxStateBytes });
       if (!state || typeof state !== "object" || Array.isArray(state)) {
         throw new TypeError("source state must be a JSON object");
       }
@@ -148,6 +177,10 @@ export function createSnapshotCapture({
       const stateBytes = new TextEncoder().encode(stateJson).byteLength;
       if (stateBytes > maxStateBytes) throw new RangeError("snapshot state exceeds maxStateBytes");
 
+      const capturedAt = requireIsoDateTime(clock(), "capturedAt");
+      if (Date.parse(capturedAt) < Date.parse(startedAt)) {
+        throw new Error("capture clock moved backwards");
+      }
       const snapshotId = requireString(createSnapshotId(), "snapshotId");
       const snapshot = Object.freeze({
         schemaVersion: 1,
