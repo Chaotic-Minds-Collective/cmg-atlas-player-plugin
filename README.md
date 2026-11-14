@@ -8,8 +8,11 @@ This plugin extends [Chaotic Minds Gaming Core](https://github.com/Chaotic-Minds
 
 - [Recovery policy](docs/RECOVERY.md) validates pre-loss snapshots against normalized loss events, identity, ownership, and cluster/grid/server scope.
 - [Snapshot capture contract](docs/SNAPSHOT_CAPTURE.md) defines bounded, immutable capture through injected server-source and durable-storage adapters.
+- [Core snapshot sink](docs/CORE_SNAPSHOT_SINK.md) maps bounded snapshots to Core's server-scoped persistence API.
 
-These modules are server-independent foundations. Native ATLAS callbacks, asset-state sources, persistent storage integration, and provider restore operations remain unverified. No production deployment or live-server action is implied.
+The Core sink is explicitly invoked and requires a dedicated server-scoped service token. It does not schedule captures, supply a native ATLAS state source, or execute restores.
+
+Native ATLAS callbacks, asset-state sources, and provider restore operations remain unverified. No production deployment or live-server action is implied.
 
 ## Readiness
 
