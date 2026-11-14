@@ -6,17 +6,16 @@ This plugin extends [Chaotic Minds Gaming Core](https://github.com/Chaotic-Minds
 
 ## Recovery
 
-The initial recovery foundation validates pre-loss snapshots against normalized loss events, asset ownership, and cluster/grid/server scope. It requires explicit approval and a provider operation receipt before a claim can be marked restored.
+- [Recovery policy](docs/RECOVERY.md) validates pre-loss snapshots against normalized loss events, identity, ownership, and cluster/grid/server scope.
+- [Snapshot capture contract](docs/SNAPSHOT_CAPTURE.md) defines bounded, immutable capture through injected server-source and durable-storage adapters.
 
-See [docs/RECOVERY.md](docs/RECOVERY.md) for the evidence contract, workflow, and live-server verification gates.
+These modules are server-independent foundations. Native ATLAS callbacks, asset-state sources, persistent storage integration, and provider restore operations remain unverified. No production deployment or live-server action is implied.
 
 ## Readiness
 
-Recovery policy tests run with Node.js 22 or later:
+Recovery tests run with Node.js 22 or later:
 
 ```sh
 npm test
 npm run check
 ```
-
-Native ATLAS compatibility, snapshot callbacks, and provider restore operations remain unverified. No production deployment or live-server action is implied.
