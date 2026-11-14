@@ -1,6 +1,6 @@
 {
   "name": "@chaotic-minds/cmg-atlas-player-recovery",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,6 +8,6 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/recovery.js && node --check src/snapshot-capture.js && node --check src/core-snapshot-sink.js && node --check test/recovery.test.js && node --check test/snapshot-capture.test.js && node --check test/core-snapshot-sink.test.js"
+    "check": "node --check src/recovery.js && node --check src/snapshot-capture.js && node --check src/core-snapshot-sink.js && node --check src/core-snapshot-reader.js && node --check test/recovery.test.js && node --check test/snapshot-capture.test.js && node --check test/core-snapshot-sink.test.js && node --check test/core-snapshot-reader.test.js"
   }
 }
