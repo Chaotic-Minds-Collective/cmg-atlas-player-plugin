@@ -27,6 +27,35 @@ function makeStore(records = [makeCooldown()]) {
   };
 }
 
+test("preserves the receiver for store claims, acknowledgements, and releases", async () => {
+  const store = {
+    records: [makeCooldown(), makeCooldown({ cooldownId: "cooldown-2", leaseToken: "lease-2" })],
+    notified: [],
+    released: [],
+    async claimExpired() {
+      return this.records;
+    },
+    async markNotified(input) {
+      this.notified.push(input);
+    },
+    async releaseClaim(input) {
+      this.released.push(input);
+    }
+  };
+  const notifier = createBreedingCooldownNotifier({
+    store,
+    sendMessage: async ({ idempotencyKey }) => {
+      if (idempotencyKey.endsWith(":cooldown-2")) throw new Error("chat unavailable");
+      return { receipt: "receipt-1" };
+    }
+  });
+
+  assert.deepEqual(await notifier.processExpired(), { claimed: 2, notified: 1, failed: 1 });
+  assert.equal(store.notified.length, 1);
+  assert.equal(store.notified[0].cooldownId, "cooldown-1");
+  assert.deepEqual(store.released, [{ cooldownId: "cooldown-2", leaseToken: "lease-2" }]);
+});
+
 test("notifies the tame owner with a stable idempotency key and records receipt", async () => {
   const store = makeStore();
   const messages = [];

@@ -61,9 +61,9 @@ export function createBreedingCooldownNotifier({
     throw new TypeError("store must be an object");
   }
 
-  const claimExpired = requireFunction(store.claimExpired, "store.claimExpired");
-  const markNotified = requireFunction(store.markNotified, "store.markNotified");
-  const releaseClaim = requireFunction(store.releaseClaim, "store.releaseClaim");
+  const claimExpired = requireFunction(store.claimExpired, "store.claimExpired").bind(store);
+  const markNotified = requireFunction(store.markNotified, "store.markNotified").bind(store);
+  const releaseClaim = requireFunction(store.releaseClaim, "store.releaseClaim").bind(store);
   const deliver = requireFunction(sendMessage, "sendMessage");
   const getNow = requireFunction(clock, "clock");
 
