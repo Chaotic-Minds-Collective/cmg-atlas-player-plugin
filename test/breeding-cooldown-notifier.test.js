@@ -130,6 +130,7 @@ test("passes bounded lease and batch settings to the store", async () => {
   const store = makeStore([]);
   const notifier = createBreedingCooldownNotifier({
     store,
+    clock: () => new Date("2026-11-14T00:00:00.000Z"),
     leaseMs: 45_000,
     batchSize: 20,
     sendMessage: async () => ({ receipt: "unused" })
