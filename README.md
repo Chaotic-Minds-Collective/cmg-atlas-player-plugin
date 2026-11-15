@@ -13,11 +13,17 @@ This plugin extends [Chaotic Minds Gaming Core](https://github.com/Chaotic-Minds
 
 The Core sink and reader require dedicated server-scoped service tokens. Neither schedules captures nor supplies a native ATLAS state source. The reader cannot restore or mutate game state.
 
-Native ATLAS callbacks, asset-state sources, and provider restore operations remain unverified. No production deployment or live-server action is implied.
+## Breeding cooldown notifications
+
+- [Breeding cooldown notifier](docs/BREEDING_COOLDOWN_NOTIFICATIONS.md) provides a provider-neutral worker that notifies the recorded tame owner when the 30-minute coloring cooldown expires.
+- The worker uses durable store claims and delivery idempotency keys to prevent concurrent or repeated notifications.
+- The actual ATLAS chat adapter and persistent store remain integration requirements; no unverified native API is assumed.
+
+Native ATLAS callbacks, asset-state sources, provider restore operations, and player-facing chat integration remain unverified. No production deployment or live-server action is implied.
 
 ## Readiness
 
-Recovery tests run with Node.js 22 or later:
+Tests run with Node.js 22 or later:
 
 ```sh
 npm test
