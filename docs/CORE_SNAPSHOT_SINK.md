@@ -2,59 +2,58 @@
 
 ## Purpose
 
-`createCoreSnapshotSink(options)` implements the Player capture coordinator's injected `sink.persist(snapshot)` contract using Core's ATLAS recovery snapshot API.
+`createCoreSnapshotSink(options)` implements the Player capture coordinator's injected `sink.persist(snapshot)` contract using Core's encrypted ATLAS asset snapshot API.
 
 It is an explicit adapter only. It does not create a capture source, schedule captures, or invoke game callbacks.
 
 ## Configuration
 
-Supply configuration from the host's secret/configuration system:
+Supply configuration from the host's secret and key-management systems:
 
 - `coreOrigin`: HTTPS origin only, with no path, query, fragment, or embedded credentials.
 - `serverId`: the Core server UUID registered for this ATLAS instance.
-- `serviceToken`: token for a dedicated service identity with only `recovery.snapshots.write` on that server.
+- `serviceToken`: token for a dedicated service identity with only `snapshots.write` on that server (the Core `asset_snapshot_manager` role).
+- `encryptSnapshot`: an injected encryption function. Use `createAesGcmSnapshotCrypto` with an external key provider; do not store keys in Core or this repository.
 - `timeoutMs`: optional bounded request timeout, default 10 seconds and maximum 30 seconds.
 - `fetchImpl`: optional injected Fetch-compatible implementation for tests.
 
-Do not commit service tokens, put them in logs, or reuse a broad administrative credential. No environment variables or global process configuration are read by this module.
+Do not commit service tokens or encryption keys, put them in logs, or reuse a broad administrative credential. No environment variables or global process configuration are read by this module.
 
 ## Request behavior
 
 The adapter posts to:
 
-`POST /integrations/servers/{serverId}/recovery/snapshots`
+`POST /integrations/servers/{serverId}/snapshots`
 
-It maps the capture snapshot to Core's strict request schema and deliberately omits local-only `schemaVersion` and `stateBytes` fields. It uses bearer authentication, JSON content negotiation, a bounded timeout, and manual redirect handling. Non-2xx responses, network failures, invalid JSON, and invalid durable receipts fail closed.
+It serializes the validated JSON state, encrypts it with AES-256-GCM, and sends only the encrypted envelope plus scope and metadata. The plaintext state is never included in the HTTP body. The encryption adapter binds the ciphertext to snapshot ID, owner, asset, kind, server, cluster, grid, timestamp, reason, and schema version using authenticated additional data (AAD).
 
-Core's `201` creation response and `200` identical-duplicate response are both accepted only when the returned snapshot ID matches and `durable: true` plus a non-empty receipt are present.
+The sink requires UUID snapshot/server/cluster IDs, a valid capture timestamp, one of the supported snapshot kinds and reasons, and a state size no larger than 1 MiB. It validates the encryption envelope before making the request. Core independently validates the registered server/cluster topology and service permission.
+
+Core's 201 creation response and 200 identical-duplicate response are both accepted only when the returned snapshot ID matches and `durable: true` plus a non-empty receipt are present.
 
 ## Example
 
 ```js
+import { createAesGcmSnapshotCrypto } from "./aes-gcm-snapshot-crypto.js";
 import { createCoreSnapshotSink } from "./core-snapshot-sink.js";
-import { createSnapshotCapture } from "./snapshot-capture.js";
 
+const snapshotCrypto = createAesGcmSnapshotCrypto({
+  getCurrentKey: keyProvider.getCurrentKey,
+  getKeyById: keyProvider.getKeyById
+});
 const sink = createCoreSnapshotSink({
   coreOrigin: config.coreOrigin,
   serverId: config.serverId,
-  serviceToken: secrets.playerSnapshotWriterToken
+  serviceToken: secrets.playerSnapshotWriterToken,
+  encryptSnapshot: snapshotCrypto.encryptSnapshot
 });
-
-const capture = createSnapshotCapture({
-  source: verifiedAtlasSource,
-  sink,
-  createSnapshotId: createStableSnapshotId
-});
-
-// Capture remains an explicit caller action.
-await capture.capture({ kind: "inventory", assetId, scope, reason: "pre-loss-checkpoint" });
 ```
 
-The example's `verifiedAtlasSource`, stable ID generator, host configuration, and secrets provider must be supplied by a verified host integration; they are not included or fabricated here.
+The host's `keyProvider`, source adapter, stable UUID generator, configuration, and secrets provider must be supplied by a verified host integration; they are not included or fabricated here.
 
-## Limits
+## Safety boundary
 
-- The sink validates the configured HTTPS origin, server scope, state shape, and 16 MiB JSON size bound.
-- Core independently validates the registered server/cluster/grid topology and service permission.
-- Core storage is not application-encrypted. Confirm database encryption-at-rest, network restrictions, backups, retention, and access controls before storing real player data.
-- A successful sink receipt proves Core accepted the payload durably; it does not prove the payload is authentic or that capture happened before a loss.
+- The sink encrypts before transmission; Core stores opaque ciphertext only.
+- Encryption keys remain outside Core and the database. Key rotation and old-key retrieval are the host's responsibility.
+- A successful sink receipt proves Core accepted the ciphertext durably; it does not prove the payload is authentic or that capture happened before a loss.
+- The current native adapter still needs verified ATLAS state sources before real captures can be enabled.

@@ -8,6 +8,6 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/recovery.js && node --check src/snapshot-capture.js && node --check src/core-snapshot-sink.js && node --check src/core-snapshot-reader.js && node --check src/breeding-cooldown-notifier.js && node --check test/recovery.test.js && node --check test/snapshot-capture.test.js && node --check test/core-snapshot-sink.test.js && node --check test/core-snapshot-reader.test.js && node --check test/breeding-cooldown-notifier.test.js"
+    "check": "node --check src/recovery.js && node --check src/snapshot-capture.js && node --check src/aes-gcm-snapshot-crypto.js && node --check src/core-snapshot-sink.js && node --check src/core-snapshot-reader.js && node --check src/breeding-cooldown-notifier.js && node --check test/recovery.test.js && node --check test/snapshot-capture.test.js && node --check test/aes-gcm-snapshot-crypto.test.js && node --check test/core-snapshot-sink.test.js && node --check test/core-snapshot-reader.test.js && node --check test/breeding-cooldown-notifier.test.js"
   }
 }
