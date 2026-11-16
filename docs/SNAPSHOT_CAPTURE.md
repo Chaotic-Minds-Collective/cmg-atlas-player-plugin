@@ -21,7 +21,7 @@ The source must return `{ ownerId, assetId, scope, state }`. The returned asset 
 
 <!-- /coderabbit-ai-generated:v1 -->
 
-Supported kinds are `inventory`, `tame`, and `ship`. The opaque `state` must be a plain JSON object. It is detached and deeply frozen before persistence. Non-JSON values, cycles, sparse arrays, excessive depth/node count, and oversized state are rejected. The default state limit is 1 MiB; callers may choose a lower limit or a bounded limit up to 1 MiB.
+Supported kinds are `inventory`, `tame`, and `ship`. The opaque `state` must be a plain JSON object. It is detached and deeply frozen before persistence. Non-JSON values, cycles, sparse arrays, excessive depth/node count, and oversized state are rejected. The default state limit is 1 MiB; callers may choose a lower limit or a bounded limit up to 1 MiB. The Core sink requires a UUID snapshot ID, UUID server and cluster IDs, schema version 1, and one of the Core reason values: `scheduled`, `pre-loss`, `manual`, or `reconciliation`.
 
 ## Invocation and idempotency
 
@@ -37,6 +37,6 @@ Before connecting a native source adapter:
 2. Identify authoritative inventory, tame, and ship state sources; do not infer full state from death/sinking events.
 3. Confirm owner and tribe identity, provider asset IDs, and cluster/grid/server scope.
 4. Establish bounded payload size, capture cadence, retention, access controls, and encryption at rest.
-5. Prove that snapshots are captured before loss events and can be read back intact.
+5. Encrypt snapshots with AES-256-GCM using a host-managed key provider, then prove they can be read back and authenticated with the correct historical key.
 
 The existing mock event stream is a test fixture, not proof of native callback support. A loss event alone cannot reconstruct inventory, tames, or ships.
