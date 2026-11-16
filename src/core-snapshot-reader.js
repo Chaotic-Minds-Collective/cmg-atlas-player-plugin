@@ -195,6 +195,9 @@ export function createCoreSnapshotReader({
     const body = await request(url.toString(), "listing");
     if (!Array.isArray(body?.data)) throw new Error("Core snapshot listing returned an invalid response");
     const items = body.data.map((item) => validateMetadata(item, fixedServerId));
+    if (items.some((item) => item.kind !== kind || item.assetId !== assetId)) {
+      throw new Error("Core snapshot listing returned a different kind or asset scope");
+    }
     if (items.some((item) => item.ownerId !== ownerId)) {
       throw new Error("Core snapshot listing returned a different owner scope");
     }
@@ -207,7 +210,11 @@ export function createCoreSnapshotReader({
     if (!body?.data || typeof body.data !== "object" || Array.isArray(body.data)) {
       throw new Error("Core snapshot read returned an invalid response");
     }
-    return validateSnapshot(body.data, fixedServerId, decryptSnapshot);
+    const snapshot = await validateSnapshot(body.data, fixedServerId, decryptSnapshot);
+    if (snapshot.snapshotId !== id) {
+      throw new Error("Core snapshot read returned a different snapshot ID");
+    }
+    return snapshot;
   }
 
   return Object.freeze({ list, get });

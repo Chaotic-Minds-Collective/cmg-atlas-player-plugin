@@ -59,7 +59,7 @@ test("lists encrypted snapshot metadata with fixed server scope and owner filter
   let called;
   const client = reader(async (url, options) => {
     called = { url: new URL(url), options };
-    return response([metadata]);
+    return response([{ ...metadata, assetId: "character/1" }]);
   });
   const result = await client.list({
     kind: "inventory",
@@ -185,4 +185,24 @@ test("sanitizes transport failures while retaining the cause", async () => {
     assert.match(error.cause.message, /cg_srv_test_reader_token/);
     return true;
   });
+});
+
+for (const mismatch of [{ kind: "ship" }, { assetId: "ship-2" }]) {
+  test(`rejects a listing with mismatched ${Object.keys(mismatch)[0]}`, async () => {
+    const client = reader(async () => response([metadata, { ...metadata, ...mismatch }]));
+    await assert.rejects(
+      client.list({ kind: "inventory", assetId: "character-1", ownerId: "steam-1" }),
+      /different kind or asset scope/
+    );
+  });
+}
+
+test("rejects a different authenticated snapshot from the same server", async () => {
+  const otherMetadata = { ...metadata, snapshotId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" };
+  const otherEncryption = await crypto.encryptSnapshot({ stateJson, metadata: otherMetadata });
+  const client = reader(async () => response({ ...otherMetadata, ...otherEncryption }));
+  await assert.rejects(client.get(snapshotId), /different snapshot ID/);
+  const result = await client.get(otherMetadata.snapshotId.toUpperCase());
+  assert.equal(result.snapshotId, otherMetadata.snapshotId);
+  assert.deepEqual(result.state, state);
 });

@@ -106,7 +106,8 @@ export function createCoreSnapshotSink({
     if (snapshotServerId !== fixedServerId) {
       throw new Error("snapshot server scope does not match configured Core server");
     }
-    const snapshotId = requiredUuid(snapshot.snapshotId, "snapshot.snapshotId");
+    const originalSnapshotId = snapshot.snapshotId;
+    const snapshotId = requiredUuid(originalSnapshotId, "snapshot.snapshotId");
     const clusterId = requiredUuid(snapshot.scope.clusterId, "scope.clusterId");
     const gridId = requiredString(snapshot.scope.gridId, "scope.gridId");
     const kind = requiredString(snapshot.kind, "snapshot.kind");
@@ -182,7 +183,7 @@ export function createCoreSnapshotSink({
         typeof receipt.receipt !== "string" || receipt.receipt.trim().length === 0) {
       throw new Error("Core encrypted snapshot persistence returned an invalid durable receipt");
     }
-    return Object.freeze({ snapshotId, durable: true, receipt: receipt.receipt });
+    return Object.freeze({ snapshotId: originalSnapshotId, durable: true, receipt: receipt.receipt });
   }
 
   return Object.freeze({ persist });

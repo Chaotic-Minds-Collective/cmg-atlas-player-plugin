@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { createAesGcmSnapshotCrypto } from "../src/aes-gcm-snapshot-crypto.js";
+import { createSnapshotCapture } from "../src/snapshot-capture.js";
 import { createCoreSnapshotSink } from "../src/core-snapshot-sink.js";
 
 const serverId = "00000000-0000-4000-8000-000000000003";
@@ -199,4 +200,34 @@ test("does not expose credentials in transport failure messages", async () => {
     assert.equal(error.message.includes("secret-value"), false);
     return true;
   });
+});
+
+test("preserves the generated uppercase ID through capture and persistence", async () => {
+  const generatedId = "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA";
+  const crypto = cryptoAdapter();
+  let payload;
+  const sink = createCoreSnapshotSink({
+    coreOrigin: "https://core.example.test", serverId, serviceToken: "test-token",
+    encryptSnapshot: crypto.encryptSnapshot,
+    fetchImpl: async (_url, options) => {
+      payload = JSON.parse(options.body);
+      return response(201, { data: {
+        snapshotId: payload.snapshotId, durable: true, receipt: "capture-receipt"
+      } });
+    }
+  });
+  const capture = createSnapshotCapture({
+    source: { capture: async () => snapshot }, sink,
+    createSnapshotId: () => generatedId,
+    clock: () => snapshot.capturedAt
+  });
+  const result = await capture.capture({
+    kind: snapshot.kind, assetId: snapshot.assetId, scope: snapshot.scope
+  });
+  assert.equal(result.snapshot.snapshotId, generatedId);
+  assert.equal(result.persistence.snapshotId, generatedId);
+  assert.equal(result.persistence.durable, true);
+  assert.equal(payload.snapshotId, generatedId.toLowerCase());
+  const { encryption, ...metadata } = payload;
+  assert.deepEqual(await crypto.decryptSnapshot({ encryption, metadata }), state);
 });
