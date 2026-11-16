@@ -23,7 +23,7 @@ function requiredDateTime(value, field) {
       !Number.isFinite(Date.parse(value))) {
     throw new TypeError(`${field} must be an ISO date-time with an explicit timezone`);
   }
-  return value;
+  return new Date(value).toISOString();
 }
 
 function normalizeOrigin(value) {

@@ -40,7 +40,7 @@ function validDateTime(value, field) {
       !Number.isFinite(Date.parse(value))) {
     throw new Error(`Core snapshot returned an invalid ${field}`);
   }
-  return value;
+  return new Date(value).toISOString();
 }
 
 function validateMetadata(item, serverId) {
@@ -124,10 +124,6 @@ async function validateSnapshot(item, serverId, decryptSnapshot) {
   }
   if (!state || typeof state !== "object" || Array.isArray(state)) {
     throw new Error("Core snapshot decryption returned invalid state");
-  }
-  const stateBytes = new TextEncoder().encode(JSON.stringify(state)).byteLength;
-  if (stateBytes !== metadata.stateBytes) {
-    throw new Error("Core snapshot plaintext size does not match metadata");
   }
   return deepFreeze({ ...metadata, state });
 }

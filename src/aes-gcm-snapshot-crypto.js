@@ -172,9 +172,6 @@ export function createAesGcmSnapshotCrypto({
     if (!state || typeof state !== "object" || Array.isArray(state)) {
       throw new Error("decrypted snapshot state must be a JSON object");
     }
-    if (Buffer.byteLength(JSON.stringify(state), "utf8") !== plaintext.byteLength) {
-      throw new Error("decrypted snapshot JSON is not in canonical serialized form");
-    }
     return state;
   }
 

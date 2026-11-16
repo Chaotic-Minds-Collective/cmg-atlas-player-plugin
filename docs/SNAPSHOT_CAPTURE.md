@@ -21,7 +21,7 @@ The source must return `{ ownerId, assetId, scope, state }`. The returned asset 
 
 <!-- /coderabbit-ai-generated:v1 -->
 
-Supported kinds are `inventory`, `tame`, and `ship`. The opaque `state` must be a plain JSON object. It is detached and deeply frozen before persistence. Non-JSON values, cycles, sparse arrays, excessive depth/node count, and oversized state are rejected. The default state limit is 1 MiB; callers may choose a lower limit or a bounded limit up to 16 MiB.
+Supported kinds are `inventory`, `tame`, and `ship`. The opaque `state` must be a plain JSON object. It is detached and deeply frozen before persistence. Non-JSON values, cycles, sparse arrays, excessive depth/node count, and oversized state are rejected. The default state limit is 1 MiB; callers may choose a lower limit or a bounded limit up to 1 MiB.
 
 ## Invocation and idempotency
 
