@@ -57,10 +57,9 @@ function reader(fetchImpl, options = {}) {
 
 test("lists encrypted snapshot metadata with fixed server scope and owner filters", async () => {
   let called;
-  const otherOwner = { ...metadata, snapshotId: "00000000-0000-4000-8000-000000000004", ownerId: "steam-2" };
   const client = reader(async (url, options) => {
     called = { url: new URL(url), options };
-    return response([metadata, otherOwner]);
+    return response([metadata]);
   });
   const result = await client.list({
     kind: "inventory",
@@ -84,6 +83,15 @@ test("lists encrypted snapshot metadata with fixed server scope and owner filter
   assert.equal("state" in result[0], false);
   assert.equal(Object.isFrozen(result), true);
   assert.equal(Object.isFrozen(result[0]), true);
+});
+
+test("rejects a Core listing that violates the requested owner filter", async () => {
+  const otherOwner = { ...metadata, snapshotId: "00000000-0000-4000-8000-000000000004", ownerId: "steam-2" };
+  const client = reader(async () => response([metadata, otherOwner]));
+  await assert.rejects(
+    client.list({ kind: "inventory", assetId: "character-1", ownerId: "steam-1" }),
+    /different owner scope/
+  );
 });
 
 test("lists require asset kind, asset ID, and owner ID", async () => {
