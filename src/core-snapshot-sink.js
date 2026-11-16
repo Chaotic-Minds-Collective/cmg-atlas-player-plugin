@@ -99,7 +99,11 @@ export function createCoreSnapshotSink({
     if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
       throw new TypeError("snapshot must be an object");
     }
-    if (!snapshot.scope || snapshot.scope.serverId !== fixedServerId) {
+    if (!snapshot.scope || typeof snapshot.scope !== "object" || Array.isArray(snapshot.scope)) {
+      throw new TypeError("snapshot scope must be an object");
+    }
+    const snapshotServerId = requiredUuid(snapshot.scope.serverId, "scope.serverId");
+    if (snapshotServerId !== fixedServerId) {
       throw new Error("snapshot server scope does not match configured Core server");
     }
     const snapshotId = requiredUuid(snapshot.snapshotId, "snapshot.snapshotId");

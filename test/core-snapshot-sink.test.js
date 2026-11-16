@@ -74,6 +74,28 @@ test("persists only an AES-256-GCM envelope to Core and maps the strict API fiel
   assert.deepEqual(recovered, state);
 });
 
+test("normalizes uppercase UUID scope values before persistence", async () => {
+  const crypto = cryptoAdapter();
+  let payload;
+  const sink = createCoreSnapshotSink({
+    coreOrigin: "https://core.example.test",
+    serverId,
+    serviceToken: "test-token",
+    encryptSnapshot: crypto.encryptSnapshot,
+    fetchImpl: async (_url, options) => {
+      payload = JSON.parse(options.body);
+      return response(201, { data: { snapshotId, durable: true, receipt: "uppercase-receipt" } });
+    }
+  });
+  const uppercase = {
+    ...snapshot,
+    scope: { ...snapshot.scope, serverId: serverId.toUpperCase(), clusterId: clusterId.toUpperCase() }
+  };
+  await sink.persist(uppercase);
+  assert.equal(payload.serverId, serverId);
+  assert.equal(payload.clusterId, clusterId);
+});
+
 test("accepts Core's idempotent duplicate receipt", async () => {
   const crypto = cryptoAdapter();
   const sink = createCoreSnapshotSink({
