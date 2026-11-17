@@ -10,6 +10,8 @@ The recovery foundation covers three independently captured asset classes:
 
 A normalized loss event is evidence that a loss occurred; it is not a restorable asset snapshot. Recovery requires a snapshot captured before the loss.
 
+The Core snapshot sink serializes the state and encrypts it with AES-256-GCM before transmission. Authenticated additional data binds the snapshot ID, owner, asset, kind, and exact server/cluster/grid scope. Core stores opaque ciphertext only; encryption keys remain with the external host key provider. The Core reader decrypts and authenticates the payload before exposing state to the recovery policy. Key rotation and retrieval of historical keys are host responsibilities.
+
 ## Evidence contract
 
 The provider adapter must translate source-specific data into these canonical fields before evaluation:
@@ -53,7 +55,7 @@ A player death does not prove that inventory was destroyed or dropped. The adapt
 5. Pass the stable claim idempotency key to a provider restore adapter.
 6. Mark the claim restored only after the provider returns a durable operation receipt.
 
-The pure foundation in `src/recovery.js` validates evidence and prepares a claim. It does **not** persist snapshots or claims, capture game state, authorize a requester, invoke a game command, restore an asset, or guarantee exactly-once provider execution. Durable storage must enforce uniqueness for the claim idempotency key. The provider adapter must support idempotent restore operations or provide a reconciliation strategy before automatic retries are enabled.
+The pure policy in `src/recovery.js` validates decrypted evidence and prepares a claim. It does **not** persist snapshots or claims, capture game state, authorize a requester, invoke a game command, restore an asset, or guarantee exactly-once provider execution. Encrypted snapshot persistence and retrieval are handled by the Core sink and reader adapters. Durable storage must enforce uniqueness for the claim idempotency key. The provider adapter must support idempotent restore operations or provide a reconciliation strategy before automatic retries are enabled.
 
 ## Required verification before live restoration
 

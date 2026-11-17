@@ -25,7 +25,7 @@ Player utilities and progression operating consistently across the ATLAS cluster
 
 ## Data ownership
 
-Core owns identity and permissions. Player owns cooldowns, destinations, recovery requests, inventory/tame snapshots, progression and ship-recovery claims. Preserve provider IDs and grid context.
+Core owns identity, permissions, and durable encrypted asset-snapshot storage. Player owns cooldowns, destinations, capture orchestration, recovery policy, progression and player-facing recovery requests. Commerce owns token product/delivery mappings. Preserve provider IDs and grid context.
 
 ## Recovery workflow
 
@@ -70,4 +70,4 @@ See [RECOVERY.md](RECOVERY.md). The recovery foundation is intentionally split f
 
 ## Current readiness
 
-Documentation, policy, and fake-adapter scaffolding only. Exact ATLAS server build, loader, SDK, callbacks, and feature-specific capabilities require isolated reproducible validation.
+Recovery policy, fake-adapter scaffolding, and encrypted Core snapshot transport are implemented. Exact ATLAS server build, loader, SDK, native state sources, callbacks, and restore capabilities still require isolated reproducible validation.

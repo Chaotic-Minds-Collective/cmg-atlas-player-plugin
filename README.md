@@ -10,8 +10,9 @@ This plugin extends [Chaotic Minds Gaming Core](https://github.com/Chaotic-Minds
 - [Snapshot capture contract](docs/SNAPSHOT_CAPTURE.md) defines bounded, immutable capture through injected server-source and durable-storage adapters.
 - [Core snapshot sink](docs/CORE_SNAPSHOT_SINK.md) maps bounded snapshots to Core's server-scoped persistence API.
 - [Core snapshot reader](docs/CORE_SNAPSHOT_READER.md) provides explicitly invoked, read-only listing and retrieval of persisted snapshot evidence.
+- [AES-256-GCM snapshot crypto](src/aes-gcm-snapshot-crypto.js) encrypts state before transmission and authenticates its asset, owner, and server metadata using AAD.
 
-The Core sink and reader require dedicated server-scoped service tokens. Neither schedules captures nor supplies a native ATLAS state source. The reader cannot restore or mutate game state.
+The Core sink and reader require dedicated server-scoped service tokens and an external key provider. Core stores opaque ciphertext and never receives encryption keys. Neither schedules captures nor supplies a native ATLAS state source. The reader cannot restore or mutate game state.
 
 ## Breeding cooldown notifications
 

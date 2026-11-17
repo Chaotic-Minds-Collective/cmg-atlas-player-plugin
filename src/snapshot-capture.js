@@ -136,8 +136,8 @@ export function createSnapshotCapture({
   if (typeof createSnapshotId !== "function") {
     throw new TypeError("createSnapshotId must be a function");
   }
-  if (!Number.isSafeInteger(maxStateBytes) || maxStateBytes < 1 || maxStateBytes > 16 * 1024 * 1024) {
-    throw new RangeError("maxStateBytes must be between 1 byte and 16 MiB");
+  if (!Number.isSafeInteger(maxStateBytes) || maxStateBytes < 1 || maxStateBytes > DEFAULT_MAX_STATE_BYTES) {
+    throw new RangeError("maxStateBytes must be between 1 byte and 1 MiB");
   }
 
   const inFlight = new Map();
